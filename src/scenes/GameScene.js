@@ -1,31 +1,40 @@
 import Phaser from 'phaser';
 import CONFIG from '../config.js';
+import Player from '../entities/Player.js';
+import Bullet from '../entities/Bullet.js';
+import TempleGenerator from '../systems/TempleGenerator.js';
+import SoundManager from '../systems/SoundManager.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GameScene' });
-    this.player = null;
-    this.cursors = null;
-    this.inventory = {
-      hasGun: false,
-      hasMachete: false,
-      bullets: 0
-    };
-    this.health = CONFIG.PLAYER_MAX_HEALTH;
+  }
+
+  init(data) {
+    // Get difficulty from BootScene
+    this.difficulty = data.difficulty || CONFIG.DEFAULT_DIFFICULTY;
+    this.gameState = 'descending'; // 'descending' or 'ascending'
   }
 
   create() {
-    console.log('GameScene: Starting game');
+    console.log(`GameScene: Starting ${this.difficulty} difficulty`);
 
-    // Create a simple test level
-    this.createTestLevel();
+    // Set background
+    this.cameras.main.setBackgroundColor('#2d1810');
+
+    // Initialize sound manager
+    this.soundManager = new SoundManager(this);
+    this.soundManager.create();
+    this.soundManager.playMusic();
+
+    // Generate temple
+    this.generateTemple();
 
     // Create player
     this.createPlayer();
 
-    // Set up camera to follow player
-    this.cameras.main.startFollow(this.player);
-    this.cameras.main.setBounds(0, 0, CONFIG.WIDTH * CONFIG.TEMPLE_SCREENS_WIDE, CONFIG.HEIGHT * CONFIG.TEMPLE_SCREENS_DEEP);
+    // Set up physics collisions
+    this.setupCollisions();
 
     // Set up controls
     this.setupControls();
@@ -34,48 +43,80 @@ export default class GameScene extends Phaser.Scene {
     this.createUI();
 
     // Set world bounds for physics
-    this.physics.world.setBounds(0, 0, CONFIG.WIDTH * CONFIG.TEMPLE_SCREENS_WIDE, CONFIG.HEIGHT * CONFIG.TEMPLE_SCREENS_DEEP);
+    const templeSize = CONFIG.DIFFICULTY[this.difficulty];
+    this.physics.world.setBounds(
+      0, 0,
+      CONFIG.WIDTH * templeSize.width,
+      CONFIG.HEIGHT * templeSize.depth
+    );
+
+    // Set up camera
+    this.cameras.main.startFollow(this.player);
+    this.cameras.main.setBounds(
+      0, 0,
+      CONFIG.WIDTH * templeSize.width,
+      CONFIG.HEIGHT * templeSize.depth
+    );
+
+    // Create bullets group
+    this.bullets = this.physics.add.group({
+      classType: Bullet,
+      runChildUpdate: true
+    });
   }
 
-  createTestLevel() {
-    // Create platforms group
-    this.platforms = this.physics.add.staticGroup();
+  generateTemple() {
+    const generator = new TempleGenerator(this, this.difficulty);
+    const temple = generator.generate();
 
-    // Create a simple test level with platforms
-    // Ground platform
-    const ground = this.add.rectangle(320, 460, 640, 40, 0x8B4513);
-    this.physics.add.existing(ground, true);
-    this.platforms.add(ground);
+    this.platforms = temple.platforms;
+    this.stairs = temple.stairs;
+    this.enemies = temple.enemies;
+    this.chests = temple.chests;
+    this.idol = temple.idol;
+    this.spawnPoint = generator.getSpawnPoint();
+    this.exitPoint = generator.getExitPoint();
 
-    // Middle platforms
-    const platform1 = this.add.rectangle(200, 320, 300, 20, 0x8B4513);
-    this.physics.add.existing(platform1, true);
-    this.platforms.add(platform1);
-
-    const platform2 = this.add.rectangle(500, 200, 250, 20, 0x8B4513);
-    this.physics.add.existing(platform2, true);
-    this.platforms.add(platform2);
-
-    // Background color - temple-like
-    this.cameras.main.setBackgroundColor('#2d1810');
+    console.log(`Temple generated: ${this.enemies.length} enemies, ${this.chests.length} chests`);
   }
 
   createPlayer() {
-    // Create player as a simple rectangle for now
-    // TODO: Replace with sprite when we have assets
-    this.player = this.add.rectangle(100, 400, 16, 24, 0xFFFFFF);
-    this.physics.add.existing(this.player);
-    this.player.body.setCollideWorldBounds(true);
+    this.player = new Player(this, this.spawnPoint.x, this.spawnPoint.y);
+  }
 
-    // Add collision with platforms
-    this.physics.add.collider(this.player, this.platforms);
+  setupCollisions() {
+    // Player collides with platforms
+    this.platforms.forEach(platform => {
+      this.physics.add.collider(this.player, platform);
+    });
+
+    // Enemies collide with platforms
+    this.enemies.forEach(enemy => {
+      this.platforms.forEach(platform => {
+        this.physics.add.collider(enemy, platform);
+      });
+
+      // Player collides with enemies
+      this.physics.add.overlap(this.player, enemy, this.handlePlayerEnemyCollision, null, this);
+    });
+
+    // Player overlaps with stairs
+    this.stairs.forEach(stairs => {
+      this.physics.add.overlap(this.player, stairs, this.handleStairsOverlap, null, this);
+    });
+
+    // Player overlaps with chests
+    this.chests.forEach(chest => {
+      this.physics.add.overlap(this.player, chest, this.handleChestOverlap, null, this);
+    });
+
+    // Player overlaps with idol
+    this.physics.add.overlap(this.player, this.idol, this.handleIdolCollect, null, this);
   }
 
   setupControls() {
-    // Arrow keys
     this.cursors = this.input.keyboard.createCursorKeys();
 
-    // Action keys
     this.keys = {
       loadGun: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z),
       shoot: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X),
@@ -87,43 +128,46 @@ export default class GameScene extends Phaser.Scene {
 
   createUI() {
     // Health bar
-    this.healthText = this.add.text(16, 16, `Health: ${this.health}/${CONFIG.PLAYER_MAX_HEALTH}`, {
-      fontSize: '16px',
+    this.healthText = this.add.text(16, 16, '', {
+      fontSize: '20px',
       fill: '#fff',
       fontFamily: 'monospace'
     }).setScrollFactor(0);
 
     // Inventory display
-    this.inventoryText = this.add.text(16, 40, this.getInventoryText(), {
-      fontSize: '16px',
+    this.inventoryText = this.add.text(16, 44, '', {
+      fontSize: '18px',
       fill: '#fff',
       fontFamily: 'monospace'
     }).setScrollFactor(0);
-  }
 
-  getInventoryText() {
-    const items = [];
-    if (this.inventory.hasGun) items.push(`Gun (${this.inventory.bullets})`);
-    if (this.inventory.hasMachete) items.push('Machete');
-    return items.length > 0 ? `Items: ${items.join(', ')}` : 'Items: None';
+    // Objective display
+    this.objectiveText = this.add.text(16, 72, '', {
+      fontSize: '18px',
+      fill: '#ffff00',
+      fontFamily: 'monospace'
+    }).setScrollFactor(0);
+
+    // Position indicator
+    this.positionText = this.add.text(CONFIG.WIDTH - 16, 16, '', {
+      fontSize: '16px',
+      fill: '#888',
+      fontFamily: 'monospace'
+    }).setScrollFactor(0).setOrigin(1, 0);
   }
 
   update() {
-    if (!this.player) return;
+    if (!this.player || !this.player.active) return;
 
-    // Handle movement
-    if (this.cursors.left.isDown) {
-      this.player.body.setVelocityX(-CONFIG.PLAYER_SPEED);
-    } else if (this.cursors.right.isDown) {
-      this.player.body.setVelocityX(CONFIG.PLAYER_SPEED);
-    } else {
-      this.player.body.setVelocityX(0);
-    }
+    // Update player
+    this.player.update(this.cursors, this.keys);
 
-    // Handle jump
-    if (Phaser.Input.Keyboard.JustDown(this.keys.space) && this.player.body.touching.down) {
-      this.player.body.setVelocityY(CONFIG.PLAYER_JUMP_VELOCITY);
-    }
+    // Update enemies
+    this.enemies.forEach(enemy => {
+      if (enemy.active) {
+        enemy.update(this.player);
+      }
+    });
 
     // Handle action keys
     if (Phaser.Input.Keyboard.JustDown(this.keys.shoot)) {
@@ -134,66 +178,225 @@ export default class GameScene extends Phaser.Scene {
       this.useMachete();
     }
 
-    if (Phaser.Input.Keyboard.JustDown(this.keys.loadGun)) {
-      this.loadGun();
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.keys.openChest)) {
-      this.openChest();
-    }
-
     // Update UI
-    this.healthText.setText(`Health: ${this.health}/${CONFIG.PLAYER_MAX_HEALTH}`);
-    this.inventoryText.setText(this.getInventoryText());
+    this.updateUI();
+
+    // Check win condition
+    this.checkWinCondition();
   }
 
   shoot() {
-    if (this.inventory.hasGun && this.inventory.bullets > 0) {
-      console.log('Shooting!');
-      this.inventory.bullets--;
-      // TODO: Create bullet projectile
-    } else if (!this.inventory.hasGun) {
+    if (!this.player.inventory.hasGun) {
       console.log('No gun!');
-    } else {
-      console.log('No bullets!');
+      return;
     }
+
+    if (!this.player.useBullet()) {
+      console.log('No bullets!');
+      this.soundManager.playSFX('empty');
+      return;
+    }
+
+    // Create bullet
+    const direction = this.player.facingRight ? 1 : -1;
+    const bulletX = this.player.x + (direction * 20);
+    const bulletY = this.player.y;
+
+    const bullet = new Bullet(this, bulletX, bulletY, direction);
+    this.bullets.add(bullet);
+
+    // Bullet hits enemies
+    this.enemies.forEach(enemy => {
+      this.physics.add.overlap(bullet, enemy, this.handleBulletHit, null, this);
+    });
+
+    this.soundManager.playSFX('shoot');
   }
 
   useMachete() {
-    if (this.inventory.hasMachete) {
-      console.log('Swinging machete!');
-      // TODO: Create machete attack hitbox
-    } else {
+    if (!this.player.inventory.hasMachete) {
       console.log('No machete!');
+      return;
+    }
+
+    // Create temporary hitbox
+    const direction = this.player.facingRight ? 1 : -1;
+    const hitboxX = this.player.x + (direction * CONFIG.MACHETE_RANGE);
+    const hitboxY = this.player.y;
+
+    const hitbox = this.add.rectangle(hitboxX, hitboxY, 40, 40, 0xFFFFFF, 0.3);
+    this.physics.add.existing(hitbox);
+
+    // Check hits
+    this.enemies.forEach(enemy => {
+      if (Phaser.Geom.Intersects.RectangleToRectangle(hitbox.getBounds(), enemy.getBounds())) {
+        enemy.takeDamage(1);
+        this.soundManager.playSFX('hit');
+      }
+    });
+
+    // Remove hitbox after animation
+    this.time.delayedCall(100, () => hitbox.destroy());
+
+    this.soundManager.playSFX('machete');
+  }
+
+  handlePlayerEnemyCollision(player, enemy) {
+    if (!player.active || !enemy.active) return;
+
+    const damage = enemy.attackPlayer(player);
+    if (damage > 0) {
+      const isDead = player.takeDamage(damage);
+      this.soundManager.playSFX('hurt');
+
+      if (isDead) {
+        this.gameOver();
+      }
     }
   }
 
-  loadGun() {
-    if (this.inventory.hasGun) {
-      console.log('Gun loaded/reloaded');
-      // Could add reload animation here
+  handleBulletHit(bullet, enemy) {
+    if (!bullet.active || !enemy.active) return;
+
+    bullet.destroy();
+    const isDead = enemy.takeDamage(1);
+
+    if (isDead) {
+      this.soundManager.playSFX('death');
     } else {
-      console.log('No gun to load!');
+      this.soundManager.playSFX('hit');
     }
   }
 
-  openChest() {
-    console.log('Trying to open chest...');
-    // TODO: Check if player is near a chest
+  handleStairsOverlap(player, stairs) {
+    player.isOnStairs = true;
+
+    // Reset stairs state when leaving
+    this.time.delayedCall(100, () => {
+      const stillOverlapping = Phaser.Geom.Intersects.RectangleToRectangle(
+        player.getBounds(),
+        stairs.getBounds()
+      );
+
+      if (!stillOverlapping) {
+        player.isOnStairs = false;
+      }
+    });
   }
 
-  takeDamage(amount) {
-    this.health = Math.max(0, this.health - amount);
-    console.log(`Player took ${amount} damage. Health: ${this.health}`);
+  handleChestOverlap(player, chest) {
+    // Store nearby chest for opening
+    this.nearbyChest = chest;
+  }
 
-    if (this.health <= 0) {
-      this.gameOver();
+  handleIdolCollect(player, idol) {
+    if (this.gameState === 'descending') {
+      player.inventory.hasIdol = true;
+      idol.destroy();
+      this.gameState = 'ascending';
+      this.soundManager.playSFX('collect');
+
+      console.log('Idol collected! Return to the entrance!');
+    }
+  }
+
+  checkWinCondition() {
+    if (this.gameState === 'ascending' && this.player.inventory.hasIdol) {
+      const distanceToExit = Phaser.Math.Distance.Between(
+        this.player.x, this.player.y,
+        this.exitPoint.x, this.exitPoint.y
+      );
+
+      if (distanceToExit < 50) {
+        this.gameWin();
+      }
+    }
+  }
+
+  updateUI() {
+    // Health
+    const healthBar = '♥'.repeat(this.player.currentHealth) + '♡'.repeat(this.player.maxHealth - this.player.currentHealth);
+    this.healthText.setText(`Health: ${healthBar}`);
+
+    // Inventory
+    const items = [];
+    if (this.player.inventory.hasGun) items.push(`Gun (${this.player.inventory.bullets})`);
+    if (this.player.inventory.hasMachete) items.push('Machete');
+    if (this.player.inventory.hasIdol) items.push('IDOL');
+    this.inventoryText.setText(items.length > 0 ? `Items: ${items.join(', ')}` : 'Items: None');
+
+    // Objective
+    if (this.gameState === 'descending') {
+      this.objectiveText.setText('Find the idol at the bottom!');
+    } else {
+      this.objectiveText.setText('Return to the entrance!');
+    }
+
+    // Position (debug)
+    const screenX = Math.floor(this.player.x / CONFIG.WIDTH);
+    const screenY = Math.floor(this.player.y / CONFIG.HEIGHT);
+    this.positionText.setText(`Screen: ${screenX},${screenY}`);
+
+    // Handle chest opening
+    if (Phaser.Input.Keyboard.JustDown(this.keys.openChest) && this.nearbyChest) {
+      const loot = this.nearbyChest.open();
+      if (loot) {
+        this.player.addItem(loot);
+        this.soundManager.playSFX('collect');
+        console.log(`Found: ${loot}`);
+      }
+      this.nearbyChest = null;
     }
   }
 
   gameOver() {
     console.log('Game Over!');
-    // TODO: Implement game over screen
-    this.scene.restart();
+    this.soundManager.stopMusic();
+    this.soundManager.playSFX('death');
+
+    // Show game over screen
+    const gameOverBg = this.add.rectangle(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2, CONFIG.WIDTH, CONFIG.HEIGHT, 0x000000, 0.8);
+    gameOverBg.setScrollFactor(0);
+
+    const gameOverText = this.add.text(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2 - 50, 'GAME OVER', {
+      fontSize: '64px',
+      fill: '#ff0000',
+      fontFamily: 'monospace'
+    }).setOrigin(0.5).setScrollFactor(0);
+
+    const restartText = this.add.text(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2 + 50, 'Press SPACE to restart', {
+      fontSize: '24px',
+      fill: '#fff',
+      fontFamily: 'monospace'
+    }).setOrigin(0.5).setScrollFactor(0);
+
+    this.input.keyboard.once('keydown-SPACE', () => {
+      this.scene.restart({ difficulty: this.difficulty });
+    });
+  }
+
+  gameWin() {
+    console.log('You Win!');
+    this.soundManager.stopMusic();
+    this.soundManager.playSFX('victory');
+
+    const winBg = this.add.rectangle(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2, CONFIG.WIDTH, CONFIG.HEIGHT, 0x000000, 0.8);
+    winBg.setScrollFactor(0);
+
+    const winText = this.add.text(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2 - 50, 'VICTORY!', {
+      fontSize: '64px',
+      fill: '#00ff00',
+      fontFamily: 'monospace'
+    }).setOrigin(0.5).setScrollFactor(0);
+
+    const continueText = this.add.text(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2 + 50, 'Press SPACE to return to menu', {
+      fontSize: '24px',
+      fill: '#fff',
+      fontFamily: 'monospace'
+    }).setOrigin(0.5).setScrollFactor(0);
+
+    this.input.keyboard.once('keydown-SPACE', () => {
+      this.scene.start('BootScene');
+    });
   }
 }
