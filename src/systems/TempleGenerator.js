@@ -4,6 +4,7 @@ import Tiger from '../entities/Tiger.js';
 import Warrior from '../entities/Warrior.js';
 import TreasureChest from '../entities/TreasureChest.js';
 import Stairs from '../entities/Stairs.js';
+import Gem from '../entities/Gem.js';
 
 /**
  * Procedurally generates the Aztec temple
@@ -19,6 +20,7 @@ export default class TempleGenerator {
     this.stairs = [];
     this.enemies = [];
     this.chests = [];
+    this.gems = [];
     this.idol = null;
   }
 
@@ -40,6 +42,7 @@ export default class TempleGenerator {
       stairs: this.stairs,
       enemies: this.enemies,
       chests: this.chests,
+      gems: this.gems,
       idol: this.idol
     };
   }
@@ -67,19 +70,35 @@ export default class TempleGenerator {
     if (Math.random() < CONFIG.CHEST_SPAWN_CHANCE) {
       this.spawnChest(offsetX, offsetY);
     }
+
+    // Spawn gems
+    if (Math.random() < CONFIG.GEM_SPAWN_CHANCE) {
+      this.spawnGems(offsetX, offsetY);
+    }
   }
 
   createPlatform(offsetX, y, screenX, screenY, level) {
     // Randomize platform width and position
-    const minWidth = 200;
-    const maxWidth = 600;
-    const width = Phaser.Math.Between(minWidth, maxWidth);
+    const width = Phaser.Math.Between(CONFIG.PLATFORM_MIN_WIDTH, CONFIG.PLATFORM_MAX_WIDTH);
 
     // Random X position within screen bounds
     const x = offsetX + Phaser.Math.Between(width / 2 + 50, CONFIG.WIDTH - width / 2 - 50);
 
-    const platform = this.scene.add.rectangle(x, y, width, 20, 0x8B4513);
+    // Create colorful platform
+    const platform = this.scene.add.rectangle(
+      x, y,
+      width, CONFIG.PLATFORM_HEIGHT,
+      CONFIG.COLORS.PLATFORM
+    );
     this.scene.physics.add.existing(platform, true);
+
+    // Add shadow/depth effect
+    const shadow = this.scene.add.rectangle(
+      x, y + 2,
+      width, CONFIG.PLATFORM_HEIGHT - 2,
+      CONFIG.COLORS.PLATFORM_SHADOW
+    );
+    shadow.setDepth(-1);
 
     this.platforms.push(platform);
 
@@ -140,25 +159,43 @@ export default class TempleGenerator {
     this.chests.push(chest);
   }
 
+  spawnGems(offsetX, offsetY) {
+    // Spawn 1-3 gems per screen
+    const numGems = Phaser.Math.Between(1, 3);
+
+    for (let i = 0; i < numGems; i++) {
+      const x = offsetX + Phaser.Math.Between(100, CONFIG.WIDTH - 100);
+      const y = offsetY + Phaser.Math.Between(100, CONFIG.HEIGHT - 100);
+
+      const gem = new Gem(this.scene, x, y);
+      this.gems.push(gem);
+    }
+  }
+
   placeIdol() {
     // Place idol at bottom center
     const centerX = (this.templeWidth / 2) * CONFIG.WIDTH;
     const bottomY = (this.templeDepth - 1) * CONFIG.HEIGHT + CONFIG.HEIGHT - 100;
 
-    this.idol = this.scene.add.rectangle(centerX, bottomY, 20, 30, 0xFFD700);
+    this.idol = this.scene.add.rectangle(
+      centerX, bottomY,
+      20, 30,
+      CONFIG.COLORS.IDOL
+    );
     this.scene.physics.add.existing(this.idol, true);
 
-    // Make it glow
-    this.idol.setStrokeStyle(4, 0xFFFF00);
+    // Make it glow with vibrant colors
+    this.idol.setStrokeStyle(4, CONFIG.COLORS.IDOL_GLOW);
 
     // Add pulsing animation
     this.scene.tweens.add({
       targets: this.idol,
-      scaleX: 1.2,
-      scaleY: 1.2,
-      duration: 1000,
+      scaleX: 1.3,
+      scaleY: 1.3,
+      duration: 800,
       yoyo: true,
-      repeat: -1
+      repeat: -1,
+      ease: 'Sine.easeInOut'
     });
   }
 

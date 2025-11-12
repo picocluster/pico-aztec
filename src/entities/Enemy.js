@@ -5,13 +5,22 @@ import CONFIG from '../config.js';
  * Base Enemy class
  * Handles patrol behavior and aggression when player is nearby
  */
-export default class Enemy extends Phaser.GameObjects.Rectangle {
+export default class Enemy extends Phaser.GameObjects.Container {
   constructor(scene, x, y, config) {
-    // Create rectangle with enemy color
-    super(scene, x, y, 16, 16, config.color);
+    super(scene, x, y);
 
     this.scene = scene;
     this.config = config;
+
+    // Create main body sprite
+    this.body = scene.add.rectangle(0, 0, config.width, config.height, config.color);
+    this.add(this.body);
+
+    // Add accent details for visual interest
+    if (config.accentColor) {
+      this.accent = scene.add.rectangle(0, 2, config.width * 0.6, config.height * 0.3, config.accentColor);
+      this.add(this.accent);
+    }
 
     // Add to scene
     scene.add.existing(this);
@@ -25,6 +34,7 @@ export default class Enemy extends Phaser.GameObjects.Rectangle {
     this.patrolRange = config.patrolRange;
     this.aggroRange = config.aggroRange;
     this.type = config.type;
+    this.pointValue = CONFIG.POINTS[config.type.toUpperCase()] || 100;
 
     // Patrol behavior
     this.spawnX = x;
@@ -33,6 +43,7 @@ export default class Enemy extends Phaser.GameObjects.Rectangle {
     this.isAggro = false;
 
     // Physics
+    this.body.setSize(config.width, config.height);
     this.body.setCollideWorldBounds(true);
     this.body.setBounce(0);
 
@@ -85,9 +96,9 @@ export default class Enemy extends Phaser.GameObjects.Rectangle {
     this.currentHealth -= amount;
 
     // Flash white when hit
-    this.setFillStyle(0xFFFFFF);
+    this.body.setFillStyle(0xFFFFFF);
     this.scene.time.delayedCall(100, () => {
-      this.setFillStyle(this.config.color);
+      this.body.setFillStyle(this.config.color);
     });
 
     if (this.currentHealth <= 0) {

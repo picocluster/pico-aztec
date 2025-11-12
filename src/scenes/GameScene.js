@@ -14,13 +14,18 @@ export default class GameScene extends Phaser.Scene {
     // Get difficulty from BootScene
     this.difficulty = data.difficulty || CONFIG.DEFAULT_DIFFICULTY;
     this.gameState = 'descending'; // 'descending' or 'ascending'
+
+    // Game stats (like original Aztec)
+    this.score = 0;
+    this.lives = CONFIG.DIFFICULTY[this.difficulty].startLives;
+    this.gemsCollected = 0;
   }
 
   create() {
     console.log(`GameScene: Starting ${this.difficulty} difficulty`);
 
-    // Set background
-    this.cameras.main.setBackgroundColor('#2d1810');
+    // Set vibrant background
+    this.cameras.main.setBackgroundColor(CONFIG.COLORS.BACKGROUND);
 
     // Initialize sound manager
     this.soundManager = new SoundManager(this);
@@ -73,15 +78,17 @@ export default class GameScene extends Phaser.Scene {
     this.stairs = temple.stairs;
     this.enemies = temple.enemies;
     this.chests = temple.chests;
+    this.gems = temple.gems;
     this.idol = temple.idol;
     this.spawnPoint = generator.getSpawnPoint();
     this.exitPoint = generator.getExitPoint();
 
-    console.log(`Temple generated: ${this.enemies.length} enemies, ${this.chests.length} chests`);
+    console.log(`Temple generated: ${this.enemies.length} enemies, ${this.chests.length} chests, ${this.gems.length} gems`);
   }
 
   createPlayer() {
     this.player = new Player(this, this.spawnPoint.x, this.spawnPoint.y);
+    this.player.lives = this.lives;
   }
 
   setupCollisions() {
@@ -110,6 +117,11 @@ export default class GameScene extends Phaser.Scene {
       this.physics.add.overlap(this.player, chest, this.handleChestOverlap, null, this);
     });
 
+    // Player overlaps with gems
+    this.gems.forEach(gem => {
+      this.physics.add.overlap(this.player, gem, this.handleGemCollect, null, this);
+    });
+
     // Player overlaps with idol
     this.physics.add.overlap(this.player, this.idol, this.handleIdolCollect, null, this);
   }
@@ -127,33 +139,50 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createUI() {
-    // Health bar
-    this.healthText = this.add.text(16, 16, '', {
+    // Top UI bar (like original Aztec)
+    const uiBarHeight = 40;
+    const uiBar = this.add.rectangle(CONFIG.WIDTH / 2, uiBarHeight / 2, CONFIG.WIDTH, uiBarHeight, 0x000000, 0.8);
+    uiBar.setScrollFactor(0);
+    uiBar.setDepth(100);
+
+    // Score (left side)
+    this.scoreText = this.add.text(20, 12, '', {
+      fontSize: '24px',
+      fill: CONFIG.COLORS.UI_TEXT,
+      fontFamily: 'monospace',
+      fontStyle: 'bold'
+    }).setScrollFactor(0).setDepth(101);
+
+    // Lives (center-left)
+    this.livesText = this.add.text(250, 12, '', {
+      fontSize: '24px',
+      fill: CONFIG.COLORS.UI_ACCENT,
+      fontFamily: 'monospace',
+      fontStyle: 'bold'
+    }).setScrollFactor(0).setDepth(101);
+
+    // Gems (center-right)
+    this.gemsText = this.add.text(450, 12, '', {
+      fontSize: '24px',
+      fill: CONFIG.COLORS.GEM_CYAN,
+      fontFamily: 'monospace',
+      fontStyle: 'bold'
+    }).setScrollFactor(0).setDepth(101);
+
+    // Inventory (right side)
+    this.inventoryText = this.add.text(650, 12, '', {
       fontSize: '20px',
-      fill: '#fff',
+      fill: CONFIG.COLORS.UI_TEXT,
       fontFamily: 'monospace'
-    }).setScrollFactor(0);
+    }).setScrollFactor(0).setDepth(101);
 
-    // Inventory display
-    this.inventoryText = this.add.text(16, 44, '', {
-      fontSize: '18px',
-      fill: '#fff',
-      fontFamily: 'monospace'
-    }).setScrollFactor(0);
-
-    // Objective display
-    this.objectiveText = this.add.text(16, 72, '', {
+    // Objective display (below UI bar)
+    this.objectiveText = this.add.text(CONFIG.WIDTH / 2, 55, '', {
       fontSize: '18px',
       fill: '#ffff00',
-      fontFamily: 'monospace'
-    }).setScrollFactor(0);
-
-    // Position indicator
-    this.positionText = this.add.text(CONFIG.WIDTH - 16, 16, '', {
-      fontSize: '16px',
-      fill: '#888',
-      fontFamily: 'monospace'
-    }).setScrollFactor(0).setOrigin(1, 0);
+      fontFamily: 'monospace',
+      align: 'center'
+    }).setScrollFactor(0).setDepth(101).setOrigin(0.5, 0);
   }
 
   update() {
@@ -230,8 +259,15 @@ export default class GameScene extends Phaser.Scene {
     // Check hits
     this.enemies.forEach(enemy => {
       if (Phaser.Geom.Intersects.RectangleToRectangle(hitbox.getBounds(), enemy.getBounds())) {
-        enemy.takeDamage(1);
-        this.soundManager.playSFX('hit');
+        const isDead = enemy.takeDamage(1);
+
+        if (isDead) {
+          this.score += enemy.pointValue;
+          this.soundManager.playSFX('death');
+          console.log(`Enemy killed! +${enemy.pointValue} points`);
+        } else {
+          this.soundManager.playSFX('hit');
+        }
       }
     });
 
@@ -250,7 +286,7 @@ export default class GameScene extends Phaser.Scene {
       this.soundManager.playSFX('hurt');
 
       if (isDead) {
-        this.gameOver();
+        this.loseLife();
       }
     }
   }
@@ -262,9 +298,44 @@ export default class GameScene extends Phaser.Scene {
     const isDead = enemy.takeDamage(1);
 
     if (isDead) {
+      // Award points for killing enemy
+      this.score += enemy.pointValue;
       this.soundManager.playSFX('death');
+      console.log(`Enemy killed! +${enemy.pointValue} points`);
     } else {
       this.soundManager.playSFX('hit');
+    }
+  }
+
+  loseLife() {
+    this.lives--;
+    console.log(`Lost a life! ${this.lives} remaining`);
+
+    if (this.lives <= 0) {
+      this.gameOver();
+    } else {
+      // Respawn player at spawn point
+      this.player.x = this.spawnPoint.x;
+      this.player.y = this.spawnPoint.y;
+      this.player.currentHealth = 1;
+      this.player.body.setVelocity(0, 0);
+
+      // Flash message
+      const respawnText = this.add.text(
+        CONFIG.WIDTH / 2,
+        CONFIG.HEIGHT / 2,
+        `${this.lives} ${this.lives === 1 ? 'LIFE' : 'LIVES'} REMAINING`,
+        {
+          fontSize: '32px',
+          fill: '#ff0000',
+          fontFamily: 'monospace',
+          fontStyle: 'bold'
+        }
+      ).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
+
+      this.time.delayedCall(2000, () => {
+        respawnText.destroy();
+      });
     }
   }
 
@@ -289,14 +360,27 @@ export default class GameScene extends Phaser.Scene {
     this.nearbyChest = chest;
   }
 
+  handleGemCollect(player, gem) {
+    if (!gem.active || gem.collected) return;
+
+    const points = gem.collect();
+    if (points > 0) {
+      this.score += points;
+      this.gemsCollected++;
+      this.soundManager.playSFX('collect');
+      console.log(`Gem collected! +${points} points`);
+    }
+  }
+
   handleIdolCollect(player, idol) {
     if (this.gameState === 'descending') {
       player.inventory.hasIdol = true;
       idol.destroy();
       this.gameState = 'ascending';
+      this.score += CONFIG.POINTS.IDOL;
       this.soundManager.playSFX('collect');
 
-      console.log('Idol collected! Return to the entrance!');
+      console.log(`Idol collected! +${CONFIG.POINTS.IDOL} points! Return to the entrance!`);
     }
   }
 
@@ -314,36 +398,37 @@ export default class GameScene extends Phaser.Scene {
   }
 
   updateUI() {
-    // Health
-    const healthBar = '♥'.repeat(this.player.currentHealth) + '♡'.repeat(this.player.maxHealth - this.player.currentHealth);
-    this.healthText.setText(`Health: ${healthBar}`);
+    // Score (like original Aztec)
+    this.scoreText.setText(`SCORE: ${this.score.toString().padStart(6, '0')}`);
+
+    // Lives
+    this.livesText.setText(`LIVES: ${this.lives}`);
+
+    // Gems
+    this.gemsText.setText(`GEMS: ${this.gemsCollected}`);
 
     // Inventory
     const items = [];
-    if (this.player.inventory.hasGun) items.push(`Gun (${this.player.inventory.bullets})`);
+    if (this.player.inventory.hasGun) items.push(`Gun(${this.player.inventory.bullets})`);
     if (this.player.inventory.hasMachete) items.push('Machete');
     if (this.player.inventory.hasIdol) items.push('IDOL');
-    this.inventoryText.setText(items.length > 0 ? `Items: ${items.join(', ')}` : 'Items: None');
+    this.inventoryText.setText(items.length > 0 ? items.join(' ') : '');
 
     // Objective
     if (this.gameState === 'descending') {
-      this.objectiveText.setText('Find the idol at the bottom!');
+      this.objectiveText.setText('↓ Find the Idol at the Bottom ↓');
     } else {
-      this.objectiveText.setText('Return to the entrance!');
+      this.objectiveText.setText('↑ Return to the Entrance! ↑');
     }
-
-    // Position (debug)
-    const screenX = Math.floor(this.player.x / CONFIG.WIDTH);
-    const screenY = Math.floor(this.player.y / CONFIG.HEIGHT);
-    this.positionText.setText(`Screen: ${screenX},${screenY}`);
 
     // Handle chest opening
     if (Phaser.Input.Keyboard.JustDown(this.keys.openChest) && this.nearbyChest) {
       const loot = this.nearbyChest.open();
       if (loot) {
         this.player.addItem(loot);
+        this.score += CONFIG.POINTS.CHEST;
         this.soundManager.playSFX('collect');
-        console.log(`Found: ${loot}`);
+        console.log(`Found: ${loot} (+${CONFIG.POINTS.CHEST} points)`);
       }
       this.nearbyChest = null;
     }

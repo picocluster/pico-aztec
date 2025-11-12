@@ -6,7 +6,7 @@ import CONFIG from '../config.js';
  */
 export default class Player extends Phaser.GameObjects.Rectangle {
   constructor(scene, x, y) {
-    super(scene, x, y, 16, 24, 0xFFFFFF);
+    super(scene, x, y, CONFIG.PLAYER_WIDTH, CONFIG.PLAYER_HEIGHT, CONFIG.COLORS.PLAYER);
 
     this.scene = scene;
 
@@ -14,9 +14,10 @@ export default class Player extends Phaser.GameObjects.Rectangle {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Player stats
-    this.maxHealth = CONFIG.PLAYER_MAX_HEALTH;
-    this.currentHealth = CONFIG.PLAYER_MAX_HEALTH;
+    // Player stats (no health bar in original - just lives)
+    this.lives = 0; // Will be set by scene
+    this.maxHealth = 1; // One hit = lose a life
+    this.currentHealth = 1;
 
     // Inventory
     this.inventory = {
