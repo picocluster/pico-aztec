@@ -269,8 +269,8 @@ export default class SpriteGenerator {
    */
   generateStairsSprite() {
     const scale = 5;
-    const width = 60 * scale;  // Wider to span diagonally
-    const height = 60 * scale; // Square for 45-degree diagonal
+    const width = 70 * scale;  // Extra width for platform connections
+    const height = 60 * scale; // Height for diagonal
     const canvas = this.scene.textures.createCanvas('stairs', width, height);
     const ctx = canvas.getContext();
 
@@ -280,21 +280,36 @@ export default class SpriteGenerator {
 
     // Draw steps going diagonally from bottom-left to top-right
     const numSteps = 8;
-    const stepSize = width / numSteps;
+    const stepSize = 60 * scale / numSteps; // Use inner area for steps
+    const platformConnectionWidth = 5 * scale; // Flat area on each end
 
+    // Bottom platform connection (left side, bottom)
+    ctx.fillStyle = '#808080';
+    ctx.fillRect(0, height - stepSize, platformConnectionWidth, stepSize);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, height - stepSize, platformConnectionWidth, stepSize);
+
+    // Draw diagonal steps in the middle
     for (let i = 0; i < numSteps; i++) {
-      // Each step is a small rectangle positioned diagonally
-      const x = i * stepSize;
+      const x = platformConnectionWidth + i * stepSize;
       const y = height - (i + 1) * stepSize;
 
       ctx.fillStyle = '#808080';
       ctx.fillRect(x, y, stepSize, stepSize);
 
-      // Draw step edge
       ctx.strokeStyle = '#000000';
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, stepSize, stepSize);
     }
+
+    // Top platform connection (right side, top)
+    const topX = platformConnectionWidth + numSteps * stepSize;
+    ctx.fillStyle = '#808080';
+    ctx.fillRect(topX, 0, platformConnectionWidth, stepSize);
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(topX, 0, platformConnectionWidth, stepSize);
 
     canvas.refresh();
     return 'stairs';

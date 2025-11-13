@@ -55,15 +55,30 @@ export default class Player extends Phaser.GameObjects.Sprite {
       this.body.setVelocityX(0);
     }
 
-    // Handle stairs climbing
+    // Handle stairs - automatic traversal when walking on them
     if (this.isOnStairs) {
       this.body.setAllowGravity(false);
 
-      if (cursors.up.isDown) {
-        this.body.setVelocityY(-CONFIG.PLAYER_CLIMB_SPEED);
-      } else if (cursors.down.isDown) {
-        this.body.setVelocityY(CONFIG.PLAYER_CLIMB_SPEED);
+      // Auto-traverse stairs based on horizontal movement
+      if (cursors.left.isDown || cursors.right.isDown) {
+        // Moving horizontally on stairs - automatically go up/down
+        if (this.stairDirection === 'right') {
+          // Stairs go up-right, so right = up, left = down
+          if (cursors.right.isDown) {
+            this.body.setVelocityY(-CONFIG.PLAYER_CLIMB_SPEED);
+          } else {
+            this.body.setVelocityY(CONFIG.PLAYER_CLIMB_SPEED);
+          }
+        } else {
+          // Stairs go up-left, so left = up, right = down
+          if (cursors.left.isDown) {
+            this.body.setVelocityY(-CONFIG.PLAYER_CLIMB_SPEED);
+          } else {
+            this.body.setVelocityY(CONFIG.PLAYER_CLIMB_SPEED);
+          }
+        }
       } else {
+        // Not moving - stay in place on stairs
         this.body.setVelocityY(0);
       }
     } else {

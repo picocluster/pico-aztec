@@ -194,6 +194,7 @@ export default class GameScene extends Phaser.Scene {
 
     // Reset stairs flag each frame (will be set if overlapping)
     this.player.isOnStairs = false;
+    this.player.stairDirection = null;
 
     // Check if player is on any stairs
     this.stairs.forEach(stairs => {
@@ -202,6 +203,7 @@ export default class GameScene extends Phaser.Scene {
         stairs.getBounds()
       )) {
         this.player.isOnStairs = true;
+        this.player.stairDirection = stairs.direction;
       }
     });
 

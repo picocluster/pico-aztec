@@ -109,8 +109,9 @@ export default class TempleGenerator {
     stairPositions.forEach(stairPos => {
       const verticalDistance = Math.abs(stairPos.y2 - stairPos.y1);
 
-      // For 45-degree stairs, width equals height
-      const stairSize = verticalDistance * 0.8; // Slightly smaller to fit nicely
+      // Stairs sprite has 70x60 aspect ratio (width:height = 1.17:1)
+      const stairHeight = verticalDistance * 0.9; // Use most of vertical distance
+      const stairWidth = stairHeight * 1.17; // Maintain sprite aspect ratio
 
       // Center position between the two platforms
       const centerX = stairPos.x;
@@ -119,7 +120,7 @@ export default class TempleGenerator {
       // Randomly choose left or right direction
       const direction = Math.random() < 0.5 ? 'left' : 'right';
 
-      const stairs = new Stairs(this.scene, centerX, centerY, stairSize, stairSize, direction);
+      const stairs = new Stairs(this.scene, centerX, centerY, stairWidth, stairHeight, direction);
       this.stairs.push(stairs);
     });
 
@@ -138,7 +139,7 @@ export default class TempleGenerator {
   }
 
   createPlatformWithGaps(offsetX, y, relevantStairs, screenX, screenY, level) {
-    const gapWidth = 220; // Width of gap for stairs (slightly wider than stair sprite)
+    const gapWidth = 280; // Width of gap for stairs (wider for new stair design)
     const platforms = [];
 
     // Sort stair positions left to right
