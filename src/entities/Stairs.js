@@ -5,7 +5,7 @@ import Phaser from 'phaser';
  */
 export default class Stairs extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, width, height, direction = 'up') {
-    super(scene, x, y, 'ladder');
+    super(scene, x, y, 'stairs');
 
     this.scene = scene;
     this.direction = direction; // 'up' or 'down'

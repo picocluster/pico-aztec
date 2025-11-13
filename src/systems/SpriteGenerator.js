@@ -14,7 +14,8 @@ export default class SpriteGenerator {
    * Generate player sprite (Indiana Jones style)
    */
   generatePlayerSprite() {
-    const canvas = this.scene.textures.createCanvas('player', 12, 16);
+    const scale = 5; // 5x larger
+    const canvas = this.scene.textures.createCanvas('player', 12 * scale, 16 * scale);
     const ctx = canvas.getContext();
 
     // Player pixels (cyan with yellow hat/whip)
@@ -46,7 +47,7 @@ export default class SpriteGenerator {
       '#4A3020',      // 8 - brown boots
     ];
 
-    this.drawPixelArt(ctx, pixels, colors);
+    this.drawPixelArt(ctx, pixels, colors, scale);
     canvas.refresh();
     return 'player';
   }
@@ -55,7 +56,8 @@ export default class SpriteGenerator {
    * Generate spider sprite (purple)
    */
   generateSpiderSprite() {
-    const canvas = this.scene.textures.createCanvas('spider', 14, 14);
+    const scale = 5;
+    const canvas = this.scene.textures.createCanvas('spider', 14 * scale, 14 * scale);
     const ctx = canvas.getContext();
 
     const pixels = [
@@ -77,7 +79,7 @@ export default class SpriteGenerator {
       '#FF00FF',      // 4 - magenta accent
     ];
 
-    this.drawPixelArt(ctx, pixels, colors);
+    this.drawPixelArt(ctx, pixels, colors, scale);
     canvas.refresh();
     return 'spider';
   }
@@ -86,7 +88,8 @@ export default class SpriteGenerator {
    * Generate tiger sprite (orange)
    */
   generateTigerSprite() {
-    const canvas = this.scene.textures.createCanvas('tiger', 18, 14);
+    const scale = 5;
+    const canvas = this.scene.textures.createCanvas('tiger', 18 * scale, 14 * scale);
     const ctx = canvas.getContext();
 
     const pixels = [
@@ -111,7 +114,7 @@ export default class SpriteGenerator {
       '#8B4513',      // 5 - brown paws
     ];
 
-    this.drawPixelArt(ctx, pixels, colors);
+    this.drawPixelArt(ctx, pixels, colors, scale);
     canvas.refresh();
     return 'tiger';
   }
@@ -120,7 +123,8 @@ export default class SpriteGenerator {
    * Generate warrior sprite (teal with gold)
    */
   generateWarriorSprite() {
-    const canvas = this.scene.textures.createCanvas('warrior', 14, 20);
+    const scale = 5;
+    const canvas = this.scene.textures.createCanvas('warrior', 14 * scale, 20 * scale);
     const ctx = canvas.getContext();
 
     const pixels = [
@@ -152,7 +156,7 @@ export default class SpriteGenerator {
       '#8B4513',      // 8 - brown feet
     ];
 
-    this.drawPixelArt(ctx, pixels, colors);
+    this.drawPixelArt(ctx, pixels, colors, scale);
     canvas.refresh();
     return 'warrior';
   }
@@ -161,7 +165,8 @@ export default class SpriteGenerator {
    * Generate gem sprite (pulsing cyan/magenta/yellow)
    */
   generateGemSprite(color = 'cyan') {
-    const canvas = this.scene.textures.createCanvas(`gem_${color}`, 8, 8);
+    const scale = 5;
+    const canvas = this.scene.textures.createCanvas(`gem_${color}`, 8 * scale, 8 * scale);
     const ctx = canvas.getContext();
 
     const pixels = [
@@ -182,7 +187,7 @@ export default class SpriteGenerator {
 
     const colors = [null].concat(colorMap[color]);
 
-    this.drawPixelArt(ctx, pixels, colors);
+    this.drawPixelArt(ctx, pixels, colors, scale);
     canvas.refresh();
     return `gem_${color}`;
   }
@@ -191,7 +196,8 @@ export default class SpriteGenerator {
    * Generate chest sprite
    */
   generateChestSprite() {
-    const canvas = this.scene.textures.createCanvas('chest', 24, 20);
+    const scale = 5;
+    const canvas = this.scene.textures.createCanvas('chest', 24 * scale, 20 * scale);
     const ctx = canvas.getContext();
 
     const pixels = [
@@ -214,7 +220,7 @@ export default class SpriteGenerator {
       '#FFD700',      // 3 - gold lock
     ];
 
-    this.drawPixelArt(ctx, pixels, colors);
+    this.drawPixelArt(ctx, pixels, colors, scale);
     canvas.refresh();
     return 'chest';
   }
@@ -223,7 +229,8 @@ export default class SpriteGenerator {
    * Generate idol sprite (golden statue)
    */
   generateIdolSprite() {
-    const canvas = this.scene.textures.createCanvas('idol', 20, 30);
+    const scale = 5;
+    const canvas = this.scene.textures.createCanvas('idol', 20 * scale, 30 * scale);
     const ctx = canvas.getContext();
 
     const pixels = [
@@ -252,44 +259,59 @@ export default class SpriteGenerator {
       '#8B0000',      // 4 - dark red mouth
     ];
 
-    this.drawPixelArt(ctx, pixels, colors);
+    this.drawPixelArt(ctx, pixels, colors, scale);
     canvas.refresh();
     return 'idol';
   }
 
   /**
-   * Generate ladder/stairs sprite
+   * Generate stairs sprite (diagonal triangular steps at 45 degrees)
    */
-  generateLadderSprite() {
-    const canvas = this.scene.textures.createCanvas('ladder', 40, 80);
+  generateStairsSprite() {
+    const scale = 5;
+    const width = 40 * scale;
+    const height = 80 * scale;
+    const canvas = this.scene.textures.createCanvas('stairs', width, height);
     const ctx = canvas.getContext();
 
-    // Draw vertical poles
-    ctx.fillStyle = CONFIG.COLORS.LADDER.toString(16).padStart(6, '0');
-    ctx.fillStyle = '#' + ctx.fillStyle;
-    ctx.fillRect(5, 0, 4, 80);
-    ctx.fillRect(31, 0, 4, 80);
+    // Draw diagonal stairs at 45-degree angle
+    ctx.fillStyle = '#C77631'; // Orange-brown color matching platforms
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
 
-    // Draw rungs
-    for (let i = 0; i < 8; i++) {
-      const y = i * 10 + 5;
-      ctx.fillRect(5, y, 30, 3);
+    // Draw multiple steps going diagonally
+    const numSteps = 8;
+    const stepWidth = width / numSteps;
+    const stepHeight = height / numSteps;
+
+    for (let i = 0; i < numSteps; i++) {
+      const x = i * stepWidth;
+      const y = i * stepHeight;
+
+      // Draw triangular step
+      ctx.beginPath();
+      ctx.moveTo(x, y + stepHeight);
+      ctx.lineTo(x + stepWidth, y + stepHeight);
+      ctx.lineTo(x + stepWidth, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
     }
 
     canvas.refresh();
-    return 'ladder';
+    return 'stairs';
   }
 
   /**
    * Helper to draw pixel art from array
    */
-  drawPixelArt(ctx, pixels, colors) {
+  drawPixelArt(ctx, pixels, colors, scale = 1) {
     for (let y = 0; y < pixels.length; y++) {
       for (let x = 0; x < pixels[y].length; x++) {
         const colorIndex = pixels[y][x];
         if (colorIndex > 0 && colors[colorIndex]) {
           ctx.fillStyle = colors[colorIndex];
-          ctx.fillRect(x, y, 1, 1);
+          ctx.fillRect(x * scale, y * scale, scale, scale);
         }
       }
     }
@@ -310,7 +332,7 @@ export default class SpriteGenerator {
     this.generateGemSprite('yellow');
     this.generateChestSprite();
     this.generateIdolSprite();
-    this.generateLadderSprite();
+    this.generateStairsSprite();
 
     console.log('All sprites generated!');
   }
