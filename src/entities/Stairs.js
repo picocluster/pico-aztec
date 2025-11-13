@@ -16,5 +16,8 @@ export default class Stairs extends Phaser.GameObjects.Sprite {
 
     // Scale sprite to fit desired dimensions
     this.setDisplaySize(width, height);
+
+    // Rotate 45 degrees clockwise
+    this.setAngle(45);
   }
 }

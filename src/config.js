@@ -10,8 +10,8 @@ export const CONFIG = {
   COLORS: {
     BACKGROUND: 0x1a0f2e, // Deep purple
     BACKGROUND_GRADIENT: 0x2d1b3d, // Lighter purple for gradient
-    PLATFORM: 0xc77631, // Rich orange-brown for temple stone
-    PLATFORM_SHADOW: 0x8b4513, // Darker brown for depth
+    PLATFORM: 0x808080, // Grey for temple stone
+    PLATFORM_SHADOW: 0x505050, // Darker grey for depth
     LADDER: 0xe0ac69, // Golden ladder
     PLAYER: 0x00ffff, // Bright cyan for player
     PLAYER_ACCENT: 0xffff00, // Yellow accent

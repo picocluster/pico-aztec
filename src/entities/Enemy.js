@@ -31,6 +31,7 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
     this.spawnY = y;
     this.patrolDirection = 1; // 1 = right, -1 = left
     this.isAggro = false;
+    this.lastDirectionChange = 0; // Prevent rapid direction changes
 
     // Physics
     this.body.setSize(config.width, config.height);
@@ -62,15 +63,30 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
   patrol() {
     // Simple patrol behavior - move back and forth within range
     const distanceFromSpawn = Math.abs(this.x - this.spawnX);
+    const now = Date.now();
 
-    if (distanceFromSpawn > this.patrolRange) {
-      // Reverse direction when reaching patrol limit
-      this.patrolDirection *= -1;
-    }
+    // Only allow direction change if enough time has passed (300ms cooldown)
+    const canChangeDirection = now - this.lastDirectionChange > 300;
 
-    // Random chance to change direction
-    if (Math.random() < 0.01) {
-      this.patrolDirection *= -1;
+    if (canChangeDirection) {
+      // Check if hitting world bounds or platform edges
+      if (this.body.blocked.left && this.patrolDirection < 0) {
+        // Only reverse if moving toward the blocked direction
+        this.patrolDirection = 1;
+        this.lastDirectionChange = now;
+      } else if (this.body.blocked.right && this.patrolDirection > 0) {
+        // Only reverse if moving toward the blocked direction
+        this.patrolDirection = -1;
+        this.lastDirectionChange = now;
+      } else if (distanceFromSpawn > this.patrolRange) {
+        // Reverse direction when reaching patrol limit
+        this.patrolDirection *= -1;
+        this.lastDirectionChange = now;
+      } else if (Math.random() < 0.005) {
+        // Random chance to change direction (less frequent)
+        this.patrolDirection *= -1;
+        this.lastDirectionChange = now;
+      }
     }
 
     this.body.setVelocityX(this.patrolDirection * this.speed * 0.5);

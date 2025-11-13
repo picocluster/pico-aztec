@@ -53,14 +53,21 @@ export default class TempleGenerator {
 
     // Generate platforms for this screen and store their positions
     const numPlatforms = CONFIG.PLATFORMS_PER_SCREEN;
-    const platformHeight = CONFIG.HEIGHT / (numPlatforms + 1);
+
+    // Define platform Y positions with increasing spacing
+    // Top: 20% down, Middle: 50% down, Bottom: 85% down
+    const platformYPositions = [
+      offsetY + CONFIG.HEIGHT * 0.20,  // Top platform
+      offsetY + CONFIG.HEIGHT * 0.50,  // Middle platform (more space)
+      offsetY + CONFIG.HEIGHT * 0.85   // Bottom platform (even more space)
+    ];
     const screenPlatforms = [];
 
     // First pass: Determine stair positions
     const stairPositions = [];
     for (let i = 0; i < numPlatforms - 1; i++) {
-      const y1 = offsetY + platformHeight * (i + 1);
-      const y2 = offsetY + platformHeight * (i + 2);
+      const y1 = platformYPositions[i];
+      const y2 = platformYPositions[i + 1];
 
       // Decide stair X position (left, center, or right third of screen)
       const section = Math.floor(Math.random() * 3); // 0=left, 1=center, 2=right
@@ -77,7 +84,7 @@ export default class TempleGenerator {
 
     // Second pass: Create platforms with gaps at stair positions
     for (let i = 0; i < numPlatforms; i++) {
-      const y = offsetY + platformHeight * (i + 1);
+      const y = platformYPositions[i];
 
       // Find stairs connecting to this platform
       const relevantStairs = stairPositions.filter(s => s.upperLevel === i || s.lowerLevel === i);

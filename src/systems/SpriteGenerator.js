@@ -275,7 +275,7 @@ export default class SpriteGenerator {
     const ctx = canvas.getContext();
 
     // Draw diagonal stairs at 45-degree angle
-    ctx.fillStyle = '#C77631'; // Orange-brown color matching platforms
+    ctx.fillStyle = '#808080'; // Grey color matching platforms
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 2;
 
