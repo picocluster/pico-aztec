@@ -6,10 +6,7 @@ import CONFIG from '../config.js';
  */
 export default class Spider extends Enemy {
   constructor(scene, x, y) {
-    super(scene, x, y, CONFIG.ENEMIES.SPIDER);
-
-    // Spiders are smaller
-    this.setSize(12, 12);
+    super(scene, x, y, CONFIG.ENEMIES.SPIDER, 'spider');
 
     // Spiders can move erratically
     this.erraticMovement = true;

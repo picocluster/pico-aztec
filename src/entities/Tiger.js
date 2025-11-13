@@ -6,15 +6,15 @@ import CONFIG from '../config.js';
  */
 export default class Tiger extends Enemy {
   constructor(scene, x, y) {
-    super(scene, x, y, CONFIG.ENEMIES.TIGER);
-
-    // Tigers are slightly larger
-    this.setSize(20, 16);
+    super(scene, x, y, CONFIG.ENEMIES.TIGER, 'tiger');
   }
 
   chasePlayer(player) {
     // Tigers chase faster than they patrol
     const direction = player.x > this.x ? 1 : -1;
     this.body.setVelocityX(direction * this.speed * 1.3);
+
+    // Flip sprite based on direction
+    this.setFlipX(direction < 0);
   }
 }

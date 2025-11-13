@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import CONFIG from '../config.js';
+import SpriteGenerator from '../systems/SpriteGenerator.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() {
@@ -12,20 +13,19 @@ export default class BootScene extends Phaser.Scene {
     const loadingText = this.add.text(
       this.cameras.main.centerX,
       this.cameras.main.centerY,
-      'LOADING...',
+      'Generating pixel art sprites...',
       {
-        fontSize: '32px',
+        fontSize: '24px',
         fill: '#fff',
         fontFamily: 'monospace'
       }
     ).setOrigin(0.5);
 
-    // TODO: Load assets here
-    // this.load.image('player', 'assets/sprites/player.png');
-    // this.load.image('enemy', 'assets/sprites/enemy.png');
-    // etc.
+    // Generate all pixel art sprites programmatically
+    const spriteGen = new SpriteGenerator(this);
+    spriteGen.generateAllSprites();
 
-    // For now, we'll create placeholder graphics in the GameScene
+    loadingText.destroy();
   }
 
   create() {

@@ -4,15 +4,18 @@ import CONFIG from '../config.js';
 /**
  * Player character
  */
-export default class Player extends Phaser.GameObjects.Rectangle {
+export default class Player extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y) {
-    super(scene, x, y, CONFIG.PLAYER_WIDTH, CONFIG.PLAYER_HEIGHT, CONFIG.COLORS.PLAYER);
+    super(scene, x, y, 'player');
 
     this.scene = scene;
 
     // Add to scene
     scene.add.existing(this);
     scene.physics.add.existing(this);
+
+    // Set physics body size
+    this.body.setSize(CONFIG.PLAYER_WIDTH, CONFIG.PLAYER_HEIGHT);
 
     // Player stats (no health bar in original - just lives)
     this.lives = 0; // Will be set by scene
@@ -43,9 +46,11 @@ export default class Player extends Phaser.GameObjects.Rectangle {
     if (cursors.left.isDown) {
       this.body.setVelocityX(-CONFIG.PLAYER_SPEED);
       this.facingRight = false;
+      this.setFlipX(true); // Flip sprite to face left
     } else if (cursors.right.isDown) {
       this.body.setVelocityX(CONFIG.PLAYER_SPEED);
       this.facingRight = true;
+      this.setFlipX(false); // Face right (default)
     } else {
       this.body.setVelocityX(0);
     }

@@ -6,10 +6,7 @@ import CONFIG from '../config.js';
  */
 export default class Warrior extends Enemy {
   constructor(scene, x, y) {
-    super(scene, x, y, CONFIG.ENEMIES.WARRIOR);
-
-    // Warriors are human-sized
-    this.setSize(16, 24);
+    super(scene, x, y, CONFIG.ENEMIES.WARRIOR, 'warrior');
   }
 
   chasePlayer(player) {

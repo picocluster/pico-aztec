@@ -4,9 +4,13 @@ import CONFIG from '../config.js';
 /**
  * Collectible gem
  */
-export default class Gem extends Phaser.GameObjects.Rectangle {
+export default class Gem extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y) {
-    super(scene, x, y, 8, 8, 0x00FFFF);
+    // Randomly choose gem color
+    const colors = ['cyan', 'magenta', 'yellow'];
+    const color = Phaser.Utils.Array.GetRandom(colors);
+
+    super(scene, x, y, `gem_${color}`);
 
     this.scene = scene;
     this.collected = false;

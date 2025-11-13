@@ -177,15 +177,8 @@ export default class TempleGenerator {
     const centerX = (this.templeWidth / 2) * CONFIG.WIDTH;
     const bottomY = (this.templeDepth - 1) * CONFIG.HEIGHT + CONFIG.HEIGHT - 100;
 
-    this.idol = this.scene.add.rectangle(
-      centerX, bottomY,
-      20, 30,
-      CONFIG.COLORS.IDOL
-    );
+    this.idol = this.scene.add.sprite(centerX, bottomY, 'idol');
     this.scene.physics.add.existing(this.idol, true);
-
-    // Make it glow with vibrant colors
-    this.idol.setStrokeStyle(4, CONFIG.COLORS.IDOL_GLOW);
 
     // Add pulsing animation
     this.scene.tweens.add({

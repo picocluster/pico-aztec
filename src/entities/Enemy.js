@@ -5,22 +5,12 @@ import CONFIG from '../config.js';
  * Base Enemy class
  * Handles patrol behavior and aggression when player is nearby
  */
-export default class Enemy extends Phaser.GameObjects.Container {
-  constructor(scene, x, y, config) {
-    super(scene, x, y);
+export default class Enemy extends Phaser.GameObjects.Sprite {
+  constructor(scene, x, y, config, spriteKey) {
+    super(scene, x, y, spriteKey);
 
     this.scene = scene;
     this.config = config;
-
-    // Create main visual sprite
-    this.sprite = scene.add.rectangle(0, 0, config.width, config.height, config.color);
-    this.add(this.sprite);
-
-    // Add accent details for visual interest
-    if (config.accentColor) {
-      this.accent = scene.add.rectangle(0, 2, config.width * 0.6, config.height * 0.3, config.accentColor);
-      this.add(this.accent);
-    }
 
     // Add to scene
     scene.add.existing(this);
@@ -84,21 +74,27 @@ export default class Enemy extends Phaser.GameObjects.Container {
     }
 
     this.body.setVelocityX(this.patrolDirection * this.speed * 0.5);
+
+    // Flip sprite based on direction
+    this.setFlipX(this.patrolDirection < 0);
   }
 
   chasePlayer(player) {
     // Move toward player
     const direction = player.x > this.x ? 1 : -1;
     this.body.setVelocityX(direction * this.speed);
+
+    // Flip sprite based on direction
+    this.setFlipX(direction < 0);
   }
 
   takeDamage(amount) {
     this.currentHealth -= amount;
 
     // Flash white when hit
-    this.sprite.setFillStyle(0xFFFFFF);
+    this.setTint(0xFFFFFF);
     this.scene.time.delayedCall(100, () => {
-      this.sprite.setFillStyle(this.config.color);
+      this.clearTint();
     });
 
     if (this.currentHealth <= 0) {

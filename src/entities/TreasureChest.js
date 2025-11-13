@@ -4,9 +4,9 @@ import CONFIG from '../config.js';
 /**
  * Treasure chest that contains items
  */
-export default class TreasureChest extends Phaser.GameObjects.Rectangle {
+export default class TreasureChest extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y) {
-    super(scene, x, y, 24, 20, 0x8B4513);
+    super(scene, x, y, 'chest');
 
     this.scene = scene;
     this.isOpened = false;
@@ -17,9 +17,6 @@ export default class TreasureChest extends Phaser.GameObjects.Rectangle {
 
     // Determine loot
     this.loot = this.generateLoot();
-
-    // Visual indicator (closed chest)
-    this.lid = scene.add.rectangle(x, y - 4, 24, 8, 0xD2691E);
   }
 
   generateLoot() {
@@ -39,24 +36,18 @@ export default class TreasureChest extends Phaser.GameObjects.Rectangle {
 
     this.isOpened = true;
 
-    // Open animation - lift lid
+    // Open animation - bounce and tint
     this.scene.tweens.add({
-      targets: this.lid,
-      y: this.y - 12,
-      angle: -45,
-      duration: 200
+      targets: this,
+      scaleY: 0.8,
+      angle: 10,
+      duration: 100,
+      yoyo: true,
+      onComplete: () => {
+        this.setTint(0x666666); // Darken to show it's opened
+      }
     });
 
-    // Change color to indicate opened
-    this.setFillStyle(0x654321);
-
     return this.loot;
-  }
-
-  destroy() {
-    if (this.lid) {
-      this.lid.destroy();
-    }
-    super.destroy();
   }
 }
