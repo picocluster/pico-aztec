@@ -51,17 +51,25 @@ export default class TempleGenerator {
     const offsetX = screenX * CONFIG.WIDTH;
     const offsetY = screenY * CONFIG.HEIGHT;
 
-    // Generate platforms for this screen
+    // Generate platforms for this screen and store their positions
     const numPlatforms = CONFIG.PLATFORMS_PER_SCREEN;
     const platformHeight = CONFIG.HEIGHT / (numPlatforms + 1);
+    const screenPlatforms = [];
 
     for (let i = 0; i < numPlatforms; i++) {
       const y = offsetY + platformHeight * (i + 1);
-      this.createPlatform(offsetX, y, screenX, screenY, i);
+      const platform = this.createPlatform(offsetX, y, screenX, screenY, i);
+      screenPlatforms.push({
+        platform: platform,
+        x: platform.x,
+        y: platform.y,
+        width: platform.width,
+        level: i
+      });
     }
 
     // Add stairs connecting platforms
-    this.createStairs(offsetX, offsetY, platformHeight);
+    this.createStairsConnectingPlatforms(screenPlatforms);
 
     // Spawn enemies (more enemies deeper in the temple)
     this.spawnEnemies(offsetX, offsetY, screenY);
@@ -105,15 +113,34 @@ export default class TempleGenerator {
     return platform;
   }
 
-  createStairs(offsetX, offsetY, platformHeight) {
-    // Create 1-2 stairs per screen to connect levels
-    const numStairs = Phaser.Math.Between(1, 2);
+  createStairsConnectingPlatforms(screenPlatforms) {
+    // Create stairs that connect each adjacent pair of platforms
+    for (let i = 0; i < screenPlatforms.length - 1; i++) {
+      const upperPlatform = screenPlatforms[i];
+      const lowerPlatform = screenPlatforms[i + 1];
 
-    for (let i = 0; i < numStairs; i++) {
-      const x = offsetX + Phaser.Math.Between(100, CONFIG.WIDTH - 100);
-      const y = offsetY + Phaser.Math.Between(platformHeight, CONFIG.HEIGHT - platformHeight);
+      // Position stairs to connect the platforms
+      // Start on the edge of upper platform, end on edge of lower platform
+      const stairWidth = 200; // Wide enough to be visible and usable
+      const stairHeight = Math.abs(lowerPlatform.y - upperPlatform.y);
 
-      const stairs = new Stairs(this.scene, x, y, 40, 80);
+      // Choose a side (left or right) for the stairs
+      const onLeft = Math.random() < 0.5;
+
+      let stairX, stairY;
+
+      if (onLeft) {
+        // Place stairs on left side
+        stairX = Math.min(upperPlatform.x - upperPlatform.width/4, lowerPlatform.x - lowerPlatform.width/4);
+      } else {
+        // Place stairs on right side
+        stairX = Math.max(upperPlatform.x + upperPlatform.width/4, lowerPlatform.x + lowerPlatform.width/4);
+      }
+
+      // Vertical position: between the two platforms
+      stairY = (upperPlatform.y + lowerPlatform.y) / 2;
+
+      const stairs = new Stairs(this.scene, stairX, stairY, stairWidth, stairHeight);
       this.stairs.push(stairs);
     }
   }
