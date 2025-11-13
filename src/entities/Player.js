@@ -14,10 +14,16 @@ export default class Player extends Phaser.GameObjects.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Set physics body size to match sprite (bottom-aligned for standing on platforms)
-    this.body.setSize(CONFIG.PLAYER_WIDTH, CONFIG.PLAYER_HEIGHT);
-    // Offset body so sprite bottom aligns with physics body bottom
-    this.body.setOffset(0, 0);
+    // Set physics body size smaller to match actual sprite content (not full canvas)
+    // Player sprite is 120x160 but actual character is smaller
+    const bodyWidth = 80;  // Narrower body
+    const bodyHeight = 140; // Shorter body (feet to top of head)
+    this.body.setSize(bodyWidth, bodyHeight);
+
+    // Center the body on the sprite horizontally, align to bottom vertically
+    const offsetX = (CONFIG.PLAYER_WIDTH - bodyWidth) / 2;
+    const offsetY = CONFIG.PLAYER_HEIGHT - bodyHeight;
+    this.body.setOffset(offsetX, offsetY);
 
     // Player stats (no health bar in original - just lives)
     this.lives = 0; // Will be set by scene

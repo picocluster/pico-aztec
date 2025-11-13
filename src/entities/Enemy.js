@@ -33,8 +33,16 @@ export default class Enemy extends Phaser.GameObjects.Sprite {
     this.isAggro = false;
     this.lastDirectionChange = 0; // Prevent rapid direction changes
 
-    // Physics
-    this.body.setSize(config.width, config.height);
+    // Physics - use smaller body to match actual sprite content
+    const bodyWidth = config.width * 0.7;  // 70% of sprite width
+    const bodyHeight = config.height * 0.8; // 80% of sprite height
+    this.body.setSize(bodyWidth, bodyHeight);
+
+    // Center the body on the sprite
+    const offsetX = (config.width - bodyWidth) / 2;
+    const offsetY = (config.height - bodyHeight) / 2;
+    this.body.setOffset(offsetX, offsetY);
+
     this.body.setCollideWorldBounds(true);
     this.body.setBounce(0);
 

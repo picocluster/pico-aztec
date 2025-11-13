@@ -37,7 +37,7 @@ export const CONFIG = {
   // Temple generation (like original Aztec)
   PLATFORMS_PER_SCREEN: 3,
   LADDERS_PER_SCREEN: 2,
-  PLATFORM_HEIGHT: 16,
+  PLATFORM_HEIGHT: 32, // Doubled for larger sprites
   PLATFORM_MIN_WIDTH: 150,
   PLATFORM_MAX_WIDTH: 400,
 
