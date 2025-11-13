@@ -55,13 +55,22 @@ export default class GameScene extends Phaser.Scene {
       CONFIG.HEIGHT * templeSize.depth
     );
 
-    // Set up camera
-    this.cameras.main.startFollow(this.player);
+    // Set up camera for screen-based viewing (no smooth scrolling)
+    // Each screen is a static view, camera snaps between screens
     this.cameras.main.setBounds(
       0, 0,
       CONFIG.WIDTH * templeSize.width,
       CONFIG.HEIGHT * templeSize.depth
     );
+
+    // Track current screen
+    this.currentScreenX = 0;
+    this.currentScreenY = 0;
+    this.templeWidth = templeSize.width;
+    this.templeDepth = templeSize.depth;
+
+    // Set initial camera position to spawn screen
+    this.updateCameraToScreen(Math.floor(this.spawnPoint.x / CONFIG.WIDTH), Math.floor(this.spawnPoint.y / CONFIG.HEIGHT));
 
     // Create bullets group
     this.bullets = this.physics.add.group({
@@ -207,11 +216,44 @@ export default class GameScene extends Phaser.Scene {
       this.useMachete();
     }
 
+    // Update camera based on player's screen position
+    this.updateCameraPosition();
+
     // Update UI
     this.updateUI();
 
     // Check win condition
     this.checkWinCondition();
+  }
+
+  /**
+   * Update camera to show a specific screen
+   */
+  updateCameraToScreen(screenX, screenY) {
+    // Clamp to valid screen coordinates
+    screenX = Phaser.Math.Clamp(screenX, 0, this.templeWidth - 1);
+    screenY = Phaser.Math.Clamp(screenY, 0, this.templeDepth - 1);
+
+    this.currentScreenX = screenX;
+    this.currentScreenY = screenY;
+
+    // Snap camera to screen position
+    this.cameras.main.scrollX = screenX * CONFIG.WIDTH;
+    this.cameras.main.scrollY = screenY * CONFIG.HEIGHT;
+  }
+
+  /**
+   * Check if player crossed screen boundary and update camera
+   */
+  updateCameraPosition() {
+    // Determine which screen the player is on
+    const playerScreenX = Math.floor(this.player.x / CONFIG.WIDTH);
+    const playerScreenY = Math.floor(this.player.y / CONFIG.HEIGHT);
+
+    // If player moved to a different screen, snap camera
+    if (playerScreenX !== this.currentScreenX || playerScreenY !== this.currentScreenY) {
+      this.updateCameraToScreen(playerScreenX, playerScreenY);
+    }
   }
 
   shoot() {
@@ -319,6 +361,12 @@ export default class GameScene extends Phaser.Scene {
       this.player.y = this.spawnPoint.y;
       this.player.currentHealth = 1;
       this.player.body.setVelocity(0, 0);
+
+      // Snap camera to spawn screen
+      this.updateCameraToScreen(
+        Math.floor(this.spawnPoint.x / CONFIG.WIDTH),
+        Math.floor(this.spawnPoint.y / CONFIG.HEIGHT)
+      );
 
       // Flash message
       const respawnText = this.add.text(
