@@ -116,11 +116,6 @@ export default class GameScene extends Phaser.Scene {
       this.physics.add.overlap(this.player, enemy, this.handlePlayerEnemyCollision, null, this);
     });
 
-    // Player overlaps with stairs
-    this.stairs.forEach(stairs => {
-      this.physics.add.overlap(this.player, stairs, this.handleStairsOverlap, null, this);
-    });
-
     // Player overlaps with chests
     this.chests.forEach(chest => {
       this.physics.add.overlap(this.player, chest, this.handleChestOverlap, null, this);
@@ -196,6 +191,19 @@ export default class GameScene extends Phaser.Scene {
 
   update() {
     if (!this.player || !this.player.active) return;
+
+    // Reset stairs flag each frame (will be set if overlapping)
+    this.player.isOnStairs = false;
+
+    // Check if player is on any stairs
+    this.stairs.forEach(stairs => {
+      if (Phaser.Geom.Intersects.RectangleToRectangle(
+        this.player.getBounds(),
+        stairs.getBounds()
+      )) {
+        this.player.isOnStairs = true;
+      }
+    });
 
     // Update player
     this.player.update(this.cursors, this.keys);
@@ -385,22 +393,6 @@ export default class GameScene extends Phaser.Scene {
         respawnText.destroy();
       });
     }
-  }
-
-  handleStairsOverlap(player, stairs) {
-    player.isOnStairs = true;
-
-    // Reset stairs state when leaving
-    this.time.delayedCall(100, () => {
-      const stillOverlapping = Phaser.Geom.Intersects.RectangleToRectangle(
-        player.getBounds(),
-        stairs.getBounds()
-      );
-
-      if (!stillOverlapping) {
-        player.isOnStairs = false;
-      }
-    });
   }
 
   handleChestOverlap(player, chest) {

@@ -56,20 +56,57 @@ export default class TempleGenerator {
     const platformHeight = CONFIG.HEIGHT / (numPlatforms + 1);
     const screenPlatforms = [];
 
-    for (let i = 0; i < numPlatforms; i++) {
-      const y = offsetY + platformHeight * (i + 1);
-      const platform = this.createPlatform(offsetX, y, screenX, screenY, i);
-      screenPlatforms.push({
-        platform: platform,
-        x: platform.x,
-        y: platform.y,
-        width: platform.width,
-        level: i
+    // First pass: Determine stair positions
+    const stairPositions = [];
+    for (let i = 0; i < numPlatforms - 1; i++) {
+      const y1 = offsetY + platformHeight * (i + 1);
+      const y2 = offsetY + platformHeight * (i + 2);
+
+      // Decide stair X position (left, center, or right third of screen)
+      const section = Math.floor(Math.random() * 3); // 0=left, 1=center, 2=right
+      const stairX = offsetX + (section * CONFIG.WIDTH / 3) + CONFIG.WIDTH / 6;
+
+      stairPositions.push({
+        x: stairX,
+        upperLevel: i,
+        lowerLevel: i + 1,
+        y1: y1,
+        y2: y2
       });
     }
 
-    // Add stairs connecting platforms
-    this.createStairsConnectingPlatforms(screenPlatforms);
+    // Second pass: Create platforms with gaps at stair positions
+    for (let i = 0; i < numPlatforms; i++) {
+      const y = offsetY + platformHeight * (i + 1);
+
+      // Find stairs connecting to this platform
+      const relevantStairs = stairPositions.filter(s => s.upperLevel === i || s.lowerLevel === i);
+
+      // Create platform segments with gaps at stair positions
+      const platforms = this.createPlatformWithGaps(offsetX, y, relevantStairs, screenX, screenY, i);
+
+      // Store main platform info (use first segment as reference)
+      if (platforms.length > 0) {
+        screenPlatforms.push({
+          platforms: platforms,
+          x: offsetX + CONFIG.WIDTH / 2,
+          y: y,
+          width: CONFIG.WIDTH,
+          level: i,
+          stairPositions: relevantStairs.map(s => s.x)
+        });
+      }
+    }
+
+    // Third pass: Create stairs at predetermined positions
+    stairPositions.forEach(stairPos => {
+      const stairWidth = 200;
+      const stairHeight = Math.abs(stairPos.y2 - stairPos.y1);
+      const stairY = (stairPos.y1 + stairPos.y2) / 2;
+
+      const stairs = new Stairs(this.scene, stairPos.x, stairY, stairWidth, stairHeight);
+      this.stairs.push(stairs);
+    });
 
     // Spawn enemies (more enemies deeper in the temple)
     this.spawnEnemies(offsetX, offsetY, screenY);
@@ -83,6 +120,68 @@ export default class TempleGenerator {
     if (Math.random() < CONFIG.GEM_SPAWN_CHANCE) {
       this.spawnGems(offsetX, offsetY);
     }
+  }
+
+  createPlatformWithGaps(offsetX, y, relevantStairs, screenX, screenY, level) {
+    const gapWidth = 220; // Width of gap for stairs (slightly wider than stair sprite)
+    const platforms = [];
+
+    // Sort stair positions left to right
+    const stairXPositions = relevantStairs.map(s => s.x).sort((a, b) => a - b);
+
+    // Define segments between gaps
+    const segments = [];
+    let lastX = offsetX;
+
+    stairXPositions.forEach(stairX => {
+      // Create segment from lastX to stair gap start
+      const segmentStart = lastX;
+      const segmentEnd = stairX - gapWidth / 2;
+
+      if (segmentEnd - segmentStart > 50) { // Only create if segment is wide enough
+        segments.push({
+          start: segmentStart,
+          end: segmentEnd
+        });
+      }
+
+      lastX = stairX + gapWidth / 2; // Next segment starts after the gap
+    });
+
+    // Final segment to screen edge
+    const finalSegmentEnd = offsetX + CONFIG.WIDTH;
+    if (finalSegmentEnd - lastX > 50) {
+      segments.push({
+        start: lastX,
+        end: finalSegmentEnd
+      });
+    }
+
+    // Create platform rectangles for each segment
+    segments.forEach(segment => {
+      const segmentWidth = segment.end - segment.start;
+      const segmentX = (segment.start + segment.end) / 2;
+
+      const platform = this.scene.add.rectangle(
+        segmentX, y,
+        segmentWidth, CONFIG.PLATFORM_HEIGHT,
+        CONFIG.COLORS.PLATFORM
+      );
+      this.scene.physics.add.existing(platform, true);
+
+      // Add shadow/depth effect
+      const shadow = this.scene.add.rectangle(
+        segmentX, y + 2,
+        segmentWidth, CONFIG.PLATFORM_HEIGHT - 2,
+        CONFIG.COLORS.PLATFORM_SHADOW
+      );
+      shadow.setDepth(-1);
+
+      this.platforms.push(platform);
+      platforms.push(platform);
+    });
+
+    return platforms;
   }
 
   createPlatform(offsetX, y, screenX, screenY, level) {
@@ -113,37 +212,6 @@ export default class TempleGenerator {
     return platform;
   }
 
-  createStairsConnectingPlatforms(screenPlatforms) {
-    // Create stairs that connect each adjacent pair of platforms
-    for (let i = 0; i < screenPlatforms.length - 1; i++) {
-      const upperPlatform = screenPlatforms[i];
-      const lowerPlatform = screenPlatforms[i + 1];
-
-      // Position stairs to connect the platforms
-      // Start on the edge of upper platform, end on edge of lower platform
-      const stairWidth = 200; // Wide enough to be visible and usable
-      const stairHeight = Math.abs(lowerPlatform.y - upperPlatform.y);
-
-      // Choose a side (left or right) for the stairs
-      const onLeft = Math.random() < 0.5;
-
-      let stairX, stairY;
-
-      if (onLeft) {
-        // Place stairs on left side
-        stairX = Math.min(upperPlatform.x - upperPlatform.width/4, lowerPlatform.x - lowerPlatform.width/4);
-      } else {
-        // Place stairs on right side
-        stairX = Math.max(upperPlatform.x + upperPlatform.width/4, lowerPlatform.x + lowerPlatform.width/4);
-      }
-
-      // Vertical position: between the two platforms
-      stairY = (upperPlatform.y + lowerPlatform.y) / 2;
-
-      const stairs = new Stairs(this.scene, stairX, stairY, stairWidth, stairHeight);
-      this.stairs.push(stairs);
-    }
-  }
 
   spawnEnemies(offsetX, offsetY, depth) {
     // Difficulty increases with depth
