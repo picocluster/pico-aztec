@@ -265,37 +265,35 @@ export default class SpriteGenerator {
   }
 
   /**
-   * Generate stairs sprite (diagonal triangular steps at 45 degrees)
+   * Generate stairs sprite (diagonal steps going up-right like home stairs)
    */
   generateStairsSprite() {
     const scale = 5;
-    const width = 40 * scale;
-    const height = 80 * scale;
+    const width = 60 * scale;  // Wider to span diagonally
+    const height = 60 * scale; // Square for 45-degree diagonal
     const canvas = this.scene.textures.createCanvas('stairs', width, height);
     const ctx = canvas.getContext();
 
-    // Draw diagonal stairs at 45-degree angle
     ctx.fillStyle = '#808080'; // Grey color matching platforms
     ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
 
-    // Draw multiple steps going diagonally
+    // Draw steps going diagonally from bottom-left to top-right
     const numSteps = 8;
-    const stepWidth = width / numSteps;
-    const stepHeight = height / numSteps;
+    const stepSize = width / numSteps;
 
     for (let i = 0; i < numSteps; i++) {
-      const x = i * stepWidth;
-      const y = i * stepHeight;
+      // Each step is a small rectangle positioned diagonally
+      const x = i * stepSize;
+      const y = height - (i + 1) * stepSize;
 
-      // Draw triangular step
-      ctx.beginPath();
-      ctx.moveTo(x, y + stepHeight);
-      ctx.lineTo(x + stepWidth, y + stepHeight);
-      ctx.lineTo(x + stepWidth, y);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+      ctx.fillStyle = '#808080';
+      ctx.fillRect(x, y, stepSize, stepSize);
+
+      // Draw step edge
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, stepSize, stepSize);
     }
 
     canvas.refresh();

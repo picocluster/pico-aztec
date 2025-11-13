@@ -107,11 +107,19 @@ export default class TempleGenerator {
 
     // Third pass: Create stairs at predetermined positions
     stairPositions.forEach(stairPos => {
-      const stairWidth = 200;
-      const stairHeight = Math.abs(stairPos.y2 - stairPos.y1);
-      const stairY = (stairPos.y1 + stairPos.y2) / 2;
+      const verticalDistance = Math.abs(stairPos.y2 - stairPos.y1);
 
-      const stairs = new Stairs(this.scene, stairPos.x, stairY, stairWidth, stairHeight);
+      // For 45-degree stairs, width equals height
+      const stairSize = verticalDistance * 0.8; // Slightly smaller to fit nicely
+
+      // Center position between the two platforms
+      const centerX = stairPos.x;
+      const centerY = (stairPos.y1 + stairPos.y2) / 2;
+
+      // Randomly choose left or right direction
+      const direction = Math.random() < 0.5 ? 'left' : 'right';
+
+      const stairs = new Stairs(this.scene, centerX, centerY, stairSize, stairSize, direction);
       this.stairs.push(stairs);
     });
 
