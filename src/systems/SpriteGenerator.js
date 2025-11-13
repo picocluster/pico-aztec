@@ -14,7 +14,7 @@ export default class SpriteGenerator {
    * Generate player sprite (Indiana Jones style)
    */
   generatePlayerSprite() {
-    const scale = 5; // 5x larger
+    const scale = 10; // 10x larger (doubled from 5x)
     const canvas = this.scene.textures.createCanvas('player', 12 * scale, 16 * scale);
     const ctx = canvas.getContext();
 
@@ -56,7 +56,7 @@ export default class SpriteGenerator {
    * Generate spider sprite (purple)
    */
   generateSpiderSprite() {
-    const scale = 5;
+    const scale = 10;
     const canvas = this.scene.textures.createCanvas('spider', 14 * scale, 14 * scale);
     const ctx = canvas.getContext();
 
@@ -88,7 +88,7 @@ export default class SpriteGenerator {
    * Generate tiger sprite (orange)
    */
   generateTigerSprite() {
-    const scale = 5;
+    const scale = 10;
     const canvas = this.scene.textures.createCanvas('tiger', 18 * scale, 14 * scale);
     const ctx = canvas.getContext();
 
@@ -123,7 +123,7 @@ export default class SpriteGenerator {
    * Generate warrior sprite (teal with gold)
    */
   generateWarriorSprite() {
-    const scale = 5;
+    const scale = 10;
     const canvas = this.scene.textures.createCanvas('warrior', 14 * scale, 20 * scale);
     const ctx = canvas.getContext();
 
@@ -165,7 +165,7 @@ export default class SpriteGenerator {
    * Generate gem sprite (pulsing cyan/magenta/yellow)
    */
   generateGemSprite(color = 'cyan') {
-    const scale = 5;
+    const scale = 10;
     const canvas = this.scene.textures.createCanvas(`gem_${color}`, 8 * scale, 8 * scale);
     const ctx = canvas.getContext();
 
@@ -196,7 +196,7 @@ export default class SpriteGenerator {
    * Generate chest sprite
    */
   generateChestSprite() {
-    const scale = 5;
+    const scale = 10;
     const canvas = this.scene.textures.createCanvas('chest', 24 * scale, 20 * scale);
     const ctx = canvas.getContext();
 
@@ -229,7 +229,7 @@ export default class SpriteGenerator {
    * Generate idol sprite (golden statue)
    */
   generateIdolSprite() {
-    const scale = 5;
+    const scale = 10;
     const canvas = this.scene.textures.createCanvas('idol', 20 * scale, 30 * scale);
     const ctx = canvas.getContext();
 
@@ -268,7 +268,7 @@ export default class SpriteGenerator {
    * Generate stairs sprite (diagonal steps going up-right like home stairs)
    */
   generateStairsSprite() {
-    const scale = 5;
+    const scale = 10;
     const width = 70 * scale;  // Extra width for platform connections
     const height = 60 * scale; // Height for diagonal
     const canvas = this.scene.textures.createCanvas('stairs', width, height);
@@ -276,7 +276,7 @@ export default class SpriteGenerator {
 
     ctx.fillStyle = '#808080'; // Grey color matching platforms
     ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 6; // Thicker lines for larger sprites
 
     // Draw steps going diagonally from bottom-left to top-right
     const numSteps = 8;

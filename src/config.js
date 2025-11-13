@@ -41,9 +41,9 @@ export const CONFIG = {
   PLATFORM_MIN_WIDTH: 150,
   PLATFORM_MAX_WIDTH: 400,
 
-  // Player settings (smaller, more like original)
-  PLAYER_WIDTH: 12,
-  PLAYER_HEIGHT: 16,
+  // Player settings (doubled for 10x sprites)
+  PLAYER_WIDTH: 120,
+  PLAYER_HEIGHT: 160,
   PLAYER_SPEED: 140,
   PLAYER_JUMP_VELOCITY: -380,
   PLAYER_CLIMB_SPEED: 100,
@@ -67,7 +67,7 @@ export const CONFIG = {
   // Physics
   GRAVITY: 800,
 
-  // Enemy configuration (colorful 16-bit style)
+  // Enemy configuration (colorful 16-bit style, doubled for 10x sprites)
   ENEMIES: {
     SPIDER: {
       type: 'spider',
@@ -78,8 +78,8 @@ export const CONFIG = {
       aggroRange: 200,
       color: 0x9b30ff, // Purple spider
       accentColor: 0xff00ff, // Bright magenta
-      width: 14,
-      height: 14
+      width: 140,
+      height: 140
     },
     TIGER: {
       type: 'tiger',
@@ -90,8 +90,8 @@ export const CONFIG = {
       aggroRange: 250,
       color: 0xff6600, // Bright orange tiger
       accentColor: 0xffff00, // Yellow stripes
-      width: 18,
-      height: 14
+      width: 180,
+      height: 140
     },
     WARRIOR: {
       type: 'warrior',
@@ -102,8 +102,8 @@ export const CONFIG = {
       aggroRange: 220,
       color: 0x00cc88, // Teal warrior
       accentColor: 0xffd700, // Gold armor
-      width: 14,
-      height: 20
+      width: 140,
+      height: 200
     }
   },
 

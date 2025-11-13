@@ -139,7 +139,7 @@ export default class TempleGenerator {
   }
 
   createPlatformWithGaps(offsetX, y, relevantStairs, screenX, screenY, level) {
-    const gapWidth = 280; // Width of gap for stairs (wider for new stair design)
+    const gapWidth = 560; // Width of gap for stairs (doubled for 10x sprites)
     const platforms = [];
 
     // Sort stair positions left to right
