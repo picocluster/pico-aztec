@@ -12,9 +12,9 @@ export default class Enemy extends Phaser.GameObjects.Container {
     this.scene = scene;
     this.config = config;
 
-    // Create main body sprite
-    this.body = scene.add.rectangle(0, 0, config.width, config.height, config.color);
-    this.add(this.body);
+    // Create main visual sprite
+    this.sprite = scene.add.rectangle(0, 0, config.width, config.height, config.color);
+    this.add(this.sprite);
 
     // Add accent details for visual interest
     if (config.accentColor) {
@@ -96,9 +96,9 @@ export default class Enemy extends Phaser.GameObjects.Container {
     this.currentHealth -= amount;
 
     // Flash white when hit
-    this.body.setFillStyle(0xFFFFFF);
+    this.sprite.setFillStyle(0xFFFFFF);
     this.scene.time.delayedCall(100, () => {
-      this.body.setFillStyle(this.config.color);
+      this.sprite.setFillStyle(this.config.color);
     });
 
     if (this.currentHealth <= 0) {
